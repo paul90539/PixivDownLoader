@@ -12,7 +12,7 @@ class UrlStruct():
         self.urlType = urlType
         self.title = title
 
-
+#取得PIXIV的登入cookies
 class PixivSpider(object):
     def __init__(self):
         self.session = requests.Session()
@@ -20,7 +20,7 @@ class PixivSpider(object):
         self.session.headers = self.headers
         self.session.cookies = http.cookiejar.LWPCookieJar(filename='cookies')
         try:
-            # 加载cookie
+            # 載入cookie
             self.session.cookies.load(filename='cookies', ignore_discard=True)
         except:
             print('cookies無法載入\n')
@@ -41,15 +41,15 @@ class PixivSpider(object):
             'return_to': 'https://www.pixiv.net/'
             }
     def get_postkey(self):
-        login_url = 'https://accounts.pixiv.net/login' # 登陆的URL
-        # 获取登录页面
+        login_url = 'https://accounts.pixiv.net/login' # 登入的URL
+        # 獲取登入介面
         res = self.session.get(login_url, params=self.params)
-        # 获取post_key
+        # 獲取post_key
         pattern = re.compile(r'name="post_key" value="(.*?)">')
         r = pattern.findall(res.text)
         self.datas['post_key'] = r[0]
     def already_login(self):
-        # 请求用户配置界面，来判断是否登录
+        # 請求用戶設定介面，來判斷是否登入
         url = 'https://www.pixiv.net/setting_user.php'
         login_code = self.session.get(url, allow_redirects=False).status_code
         if login_code == 200:
@@ -57,28 +57,30 @@ class PixivSpider(object):
         else:
             return False
     def login(self, account, password):
-        post_url = 'https://accounts.pixiv.net/api/login?lang=en' # 提交POST请求的URL
-        # 设置postkey
+        post_url = 'https://accounts.pixiv.net/api/login?lang=en' # 送出POST請求的URL
+        # 設定postkey
         self.get_postkey()
         self.datas['pixiv_id'] = account
         self.datas['password'] = password
-        # 发送post请求模拟登录
+        # 送出post請求模擬登入
         result = self.session.post(post_url, data=self.datas)
         print(result.json())
-        # 储存cookies
+        # 儲存cookies
         self.session.cookies.save(ignore_discard=True, ignore_expires=True)
 
+    #清除登入資訊
     def accountClear(self):
         os.remove("cookies")
         self.__init__()
 
-
+#建立下載清單
 class CreateDownloadList():
     def __init__(self, session, memberID):
         self.memberID = memberID
         self.session = session
         self.threadPool = queue.Queue(0)
 
+    #取得繪師的所有圖片資訊
     def getImageList(self):
         url = 'https://www.pixiv.net/member_illust.php?id=' + self.memberID + '&type=all'
 
@@ -121,6 +123,7 @@ class CreateDownloadList():
         
         return True
 
+    #漫畫型別的圖片組取得
     def mangaList(self, title, urlType, topicUrl):
         mangaPage = 0
         mangaEmptyFlag = False
@@ -138,6 +141,7 @@ class CreateDownloadList():
             mangaPage += 1
             mangaUrl = topicUrl + '&page=' + str(mangaPage)
 
+    #普通的單一圖片取得
     def mediumList(self, title, urlType, topicUrl):
         topicRes = self.session.get(topicUrl)
         topicSoup = BeautifulSoup(topicRes.text, "html.parser")
@@ -146,6 +150,7 @@ class CreateDownloadList():
         self.threadPool.put(UrlStruct(title, urlType, imageUrl))
         self.saveImage(topicUrl, imageUrl, title)
 
+    #儲存圖片
     def saveImage(self, topicUrl, imageUrl, title):
         header = {  
             'Referer': topicUrl,  
@@ -158,7 +163,7 @@ class CreateDownloadList():
         f.close()
         del resImage
 
-
+    #檢查是否成功獲取網頁資訊
     def checkAlive(self, url):
         if url == "checkAlive":
             url = 'https://www.pixiv.net/member_illust.php?id=' + self.memberID
@@ -206,12 +211,12 @@ if __name__ == "__main__":
             spider.login(account, password)
 
         elif select == '2':
-            member = input('請輸入畫師ID:\n>>> ')
-            DLImageList = CreateDownloadList(spider.session, member)
+            memberID = input('請輸入畫師ID:\n>>> ')
+            DLImageList = CreateDownloadList(spider.session, memberID)
             if DLImageList.checkAlive("checkAlive"):
                 print("找到繪師")
-                if not os.path.exists(member): 
-                    os.makedirs(member)
+                if not os.path.exists(memberID): 
+                    os.makedirs(memberID)
                 DLImageList.getImageList()
             else:
                 print("找不到該繪師")
