@@ -7,7 +7,7 @@
 
 ## 說明
 
-目標網站:[Pixiv](https://www.pixiv.net)
+目標網站:[Pixiv](https://www.pixiv.net)<br>
 功能就是可以讓你利用python直接下載下來你所指定的繪師的所有作品<br>
 需要有pixiv帳號<br>
 輸入完繪師帳號後，在選擇並輸入繪師ID，就會直接下載<br>
